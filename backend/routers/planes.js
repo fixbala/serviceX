@@ -1,16 +1,26 @@
+// Importación de módulos y dependencias
 const express = require('express');
 const cors = require('cors');
 const pool = require('../database/db.js');
 const routerPlanes = express.Router();
 const { validaIdPlan, validarPlan } = require('../validaciones/ValidarPlanes.js');
-const { validationResult } = require('express-validator')
-const { auditar } = require('../funciones/funciones.js')
+const { validationResult } = require('express-validator');
+const { auditar } = require('../funciones/funciones.js');
 
+// Configuración del enrutador para los planes
 routerPlanes.use(express.json());
 routerPlanes.use(cors());
 
-
-//create 
+/**
+ * Ruta para crear un nuevo plan.
+ * 
+ * @route POST /planes
+ * @param {string} nombre_plan - Nombre del plan.
+ * @param {string} descripcion - Descripción del plan.
+ * @param {number} precio - Precio del plan.
+ * @param {boolean} estado_plan - Estado del plan (activo o inactivo).
+ * @returns {object} - Mensaje de éxito y el ID del plan creado o un mensaje de error si falla.
+ */
 routerPlanes.post('/', validarPlan, async (req, res) => {
     try {
         const errores = validationResult(req);
@@ -48,9 +58,14 @@ routerPlanes.post('/', validarPlan, async (req, res) => {
         console.error('Error al crear el plan:', error.message);
         res.status(500).json({ error: 'Error al crear el plan' });
     }
-}); 
+});
 
-// get all planes ----------------------------------------------------------------------------
+/**
+ * Ruta para obtener todos los planes.
+ * 
+ * @route GET /planes
+ * @returns {Array} - Lista de planes disponibles o un mensaje de error si falla.
+ */
 routerPlanes.get('/', async (req, res) => {
     try {
         const query = `
@@ -69,8 +84,13 @@ routerPlanes.get('/', async (req, res) => {
     }
 });
 
-
-// Get a plan por su id
+/**
+ * Ruta para obtener un plan específico por su ID.
+ * 
+ * @route GET /planes/:id_plan
+ * @param {number} id_plan - ID del plan a buscar.
+ * @returns {object} - El plan solicitado o un mensaje de error si no se encuentra o falla.
+ */
 routerPlanes.get('/:id_plan', validaIdPlan, async (req, res) => {
     try {
         const { id_plan } = req.params;
@@ -99,8 +119,13 @@ routerPlanes.get('/:id_plan', validaIdPlan, async (req, res) => {
     }
 });
 
-
-// eliminar plan
+/**
+ * Ruta para eliminar (marcar como borrado) un plan por su ID.
+ * 
+ * @route PATCH /planes/:id_plan
+ * @param {number} id_plan - ID del plan a eliminar.
+ * @returns {object} - Mensaje de éxito o un mensaje de error si no se encuentra o falla.
+ */
 routerPlanes.patch('/:id_plan', validaIdPlan, async (req, res) => {
     try {
         const operacion = req.method;
@@ -133,11 +158,19 @@ routerPlanes.patch('/:id_plan', validaIdPlan, async (req, res) => {
         res.status(500).json({ error: 'Error al borrar el plan' });
     }
 });
- 
 
-// modificar planes--------------------------------------------------------------------------------
+/**
+ * Ruta para modificar un plan existente.
+ * 
+ * @route PUT /planes/:id_plan
+ * @param {number} id_plan - ID del plan a modificar.
+ * @param {string} nombre_plan - Nuevo nombre del plan.
+ * @param {string} descripcion - Nueva descripción del plan.
+ * @param {number} precio - Nuevo precio del plan.
+ * @param {boolean} estado_plan - Nuevo estado del plan (activo o inactivo).
+ * @returns {object} - Mensaje de éxito o un mensaje de error si no se encuentra o falla.
+ */
 routerPlanes.put('/:id_plan', validaIdPlan, validarPlan, async (req, res) => {
-
     const { id_plan } = req.params;
     const operacion = req.method;
     const id_usuarioAuditoria = req.headers['id_usuario'];
@@ -171,6 +204,4 @@ routerPlanes.put('/:id_plan', validaIdPlan, validarPlan, async (req, res) => {
     }
 });
  
-
-
 module.exports = routerPlanes;
