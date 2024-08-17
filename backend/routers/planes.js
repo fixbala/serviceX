@@ -134,3 +134,43 @@ routerPlanes.patch('/:id_plan', validaIdPlan, async (req, res) => {
     }
 });
  
+
+// modificar planes--------------------------------------------------------------------------------
+routerPlanes.put('/:id_plan', validaIdPlan, validarPlan, async (req, res) => {
+
+    const { id_plan } = req.params;
+    const operacion = req.method;
+    const id_usuarioAuditoria = req.headers['id_usuario'];
+    const { nombre_plan, descripcion, precio, estado_plan } = req.body;
+
+    try {
+        const query = `
+            UPDATE planes
+            SET nombre_plan = $1, descripcion = $2, precio = $3, estado_plan = $4
+            WHERE id_plan = $5
+            AND borrado = false
+            AND NOT EXISTS (
+                SELECT 1 FROM planes WHERE nombre_plan = $1 AND id_plan <> $5 AND borrado = false
+            )
+            RETURNING *;
+        `;
+
+        const values = [nombre_plan, descripcion, precio, estado_plan, id_plan];
+
+        const actualizarPlan = await pool.query(query, values);
+
+        if (actualizarPlan.rowCount > 0) {
+            auditar(operacion, id_usuarioAuditoria);
+            return res.status(200).json({ mensaje: 'Plan actualizado exitosamente' });
+        } else {
+            return res.status(404).json({ error: 'Error al modificar plan' });
+        }
+    } catch (error) {
+        console.error('Error al modificar el plan:', error.message);
+        return res.status(500).json({ error: 'Error al modificar el plan' });
+    }
+});
+ 
+
+
+module.exports = routerPlanes;
