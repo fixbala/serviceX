@@ -1,17 +1,23 @@
+// Importación de módulos y dependencias
 const express = require('express');
 const cors = require('cors');
 const pool = require('../database/db.js');
 
-  
-
+// Configuración del enrutador para poligonos y puntos
 const routerPoligonosPuntos = express.Router();
-
 routerPoligonosPuntos.use(express.json());
 routerPoligonosPuntos.use(cors());
 
-//get all poligonos and puntos
+/**
+ * Ruta para obtener todos los polígonos y sus puntos asociados.
+ * 
+ * @route GET /poligonopuntos
+ * @returns {object} - Una colección GeoJSON de todos los polígonos y sus puntos asociados,
+ *                     o un mensaje de error en caso de falla.
+ */
 routerPoligonosPuntos.get('/', async (req, res) => {
   try {
+    // Consulta para obtener polígonos y sus puntos asociados
     const query = `
     SELECT
       pl.id_poligono,
@@ -25,7 +31,7 @@ routerPoligonosPuntos.get('/', async (req, res) => {
 
     const result = await pool.query(query);
 
-    // Organizar datos
+    // Mapeo para organizar los datos de los polígonos y sus puntos
     const featuresMap = new Map();
 
     result.rows.forEach(row => {
@@ -53,8 +59,10 @@ routerPoligonosPuntos.get('/', async (req, res) => {
       }
     });
 
+    // Conversión del mapa de características a un array de GeoJSON
     const featuresArray = [...featuresMap.values()];
 
+    // Creación de la respuesta GeoJSON
     const geoJsonResponse = {
       type: "FeatureCollection",
       features: featuresArray.map(feature => {
@@ -65,17 +73,18 @@ routerPoligonosPuntos.get('/', async (req, res) => {
           },
           geometry: {
             coordinates: [feature.geometry.coordinates[0]],
-            type: "Polygon", // Cambio de ubicación del campo "type"
+            type: "Polygon", // Especifica que la geometría es un polígono
           },
         };
       })
     };
 
+    // Envío de la respuesta
     res.json(geoJsonResponse);
   } catch (error) {
     console.log(error);
     res.status(500).send('Error al obtener los datos');
   }
 });
-
+  
 module.exports = routerPoligonosPuntos;
