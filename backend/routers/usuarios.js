@@ -201,3 +201,142 @@ routerUsuarios.put('/:id_usuario', CargaArchivo.single('fileUsuario'), validarId
     }
   });
     
+
+  
+routerUsuarios.patch('/edit/:id_usuario', validarIdUsuario, validarActUsuario, validarpathusuario, async (req, res) => {
+    const { id_usuario } = req.params;
+    const {
+      nombre_usuario, id_sededepar, id_tipousuario, nombre, apellido, pregunta, extension_telefonica, telefono, cedula, correo
+    } = req.body;
+  
+    const operacion = req.method;
+    const id_usuarioAuditoria = req.headers['id_usuario'];
+  
+    const camposAmayusculas = ['nombre', 'apellido', 'pregunta'];
+    const camposMayus = convertirMayusculas(camposAmayusculas, req.body);
+  
+    try {
+      const errores = validationResult(req);
+  
+      if (errores.isEmpty()) {
+        // Query SQL para actualizar el usuario
+        const query = `
+          UPDATE usuarios
+          SET
+            nombre_usuario = $1,
+            id_sededepar = $2,
+            id_tipousuario = $3,
+            nombre = $4,
+            apellido = $5,
+            pregunta = $6,
+            extension_telefonica = $7,
+            telefono = $8,
+            cedula = $9,
+            correo = $10
+          WHERE id_usuario = $11
+            AND NOT borrado
+            AND EXISTS (SELECT 1 FROM sedes_departamentos WHERE id_sede_departamento = $2)
+            AND EXISTS (SELECT 1 FROM tipos_usuarios WHERE id_tipo_usuario = $3)
+            AND NOT EXISTS (
+              SELECT 1 FROM usuarios
+              WHERE (nombre_usuario = $1 OR cedula = $9)
+              AND id_usuario <> $11
+            )
+          RETURNING *;
+        `;
+  
+        const values = [
+          nombre_usuario,
+          id_sededepar,
+          id_tipousuario,
+          camposMayus.nombre,
+          camposMayus.apellido,
+          camposMayus.pregunta,
+          extension_telefonica,
+          telefono,
+          cedula,
+          correo,
+          id_usuario
+        ];
+  
+        const actualizarUsuario = await pool.query(query, values);
+        
+        if (actualizarUsuario.rowCount > 0) {
+          auditar(operacion, id_usuarioAuditoria);
+  
+          return res.status(200).json({ mensaje: 'Usuario actualizado exitosamente' });
+        } else {
+          return res.status(400).json({ error: 'Error al actualizar el usuario' });
+        }
+      } else {
+        return res.status(400).json({ error: 'Datos incorrectos' });
+      }
+     
+    } catch (error) {
+      console.error('Error al actualizar el usuario:', error);
+      res.status(500).json({ error: 'Error al actualizar el usuario' });
+    }
+  });
+  
+  
+  routerUsuarios.use(errorHandler);
+  
+  // Eliminar Usuario
+  routerUsuarios.patch('/:id_usuario', validarIdUsuario, async (req, res) => {
+    try {
+      const { id_usuario } = req.params;
+  
+      // Validacion #1
+      const usuarioExistente = await pool.query('SELECT * FROM usuarios WHERE id_usuario = $1 AND borrado = false', [id_usuario]);
+  
+      if (usuarioExistente.rowCount === 0) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+  
+      // Actualiza el usuario y marca como borrado
+      const updateQuery = `
+        UPDATE usuarios 
+        SET borrado = true
+        WHERE id_usuario = $1
+        RETURNING *;
+      `;
+  
+      await pool.query(updateQuery, [id_usuario]);
+  
+      res.json({ mensaje: 'Usuario eliminado correctamente' });
+    } catch (error) {
+      console.error('Error al marcar usuario como borrado:', error);
+      res.status(500).json({ error: 'Error al marcar usuario como borrado' });
+    }
+  });
+  
+  //Obtener Usuario
+  
+  routerUsuarios.get('/', async (req, res) => {
+    try {
+      const usuarios = await pool.query('SELECT id_usuario, nombre_usuario, id_sededepar, id_tipousuario, nombre, apellido, pregunta, foto_usuario, extension_telefonica, telefono, cedula, correo FROM usuarios WHERE borrado = false ORDER BY id_usuario ASC');
+      res.json(usuarios.rows);
+  
+    } catch (error) {
+      console.log(error);
+    }
+  });
+  
+  //Obtener un Usuario
+  
+  routerUsuarios.get('/:id_usuario', async (req, res) => {
+    try {
+      const { id_usuario } = req.params;
+      const usuarios = await pool.query('SELECT id_usuario, nombre_usuario, id_sededepar, id_tipousuario, nombre, apellido, pregunta, foto_usuario, extension_telefonica telefono, cedula, correo FROM usuarios WHERE id_usuario = $1 AND borrado = false', [id_usuario]);
+      if (usuarios.rowCount === 0) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+      res.json(usuarios.rows[0]);
+  
+    } catch (error) {
+      console.log(error);
+    }
+  });
+   
+  
+  module.exports = routerUsuarios
