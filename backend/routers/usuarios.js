@@ -76,3 +76,128 @@ routerUsuarios.post('/', CargaArchivo.single('fileUsuario'), validarUsuario, asy
     console.error(error.message);
   }
 }); 
+
+
+// Modificar Usuario---------------------------------------------------------------
+
+routerUsuarios.put('/:id_usuario', CargaArchivo.single('fileUsuario'), validarIdUsuario, validarActUsuario, validarUsuario, async (req, res) => {
+    const { id_usuario } = req.params;
+    const {
+      nombre_usuario, id_sededepar, id_tipousuario, nombre, apellido, pregunta, respuesta,clave, extension_telefonica, telefono, cedula, correo
+    } = req.body;
+  
+    const queryImagenAnterior = 'SELECT foto_usuario FROM usuarios WHERE id_usuario = $1';
+    const resultImagenAnterior = await pool.query(queryImagenAnterior, [id_usuario]);
+  
+    const imagenAnterior = resultImagenAnterior.rows.length > 0 ? resultImagenAnterior.rows[0].foto_usuario : null;
+  
+    const fileUsuario = req.file ? req.file.filename : null;
+  
+    const camposAmayusculas = ['nombre', 'apellido', 'pregunta'];
+    const camposMayus = convertirMayusculas(camposAmayusculas, req.body);
+  
+    const operacion = req.method;
+    const id_usuarioAuditoria = req.headers['id_usuario'];
+  
+    try {
+  
+      const fraseEncriptacion = crypto.randomBytes(64).toString('base64');
+      const claveEncriptada = await bcrypt.hash(clave + fraseEncriptacion, 12);
+      const respuestaEncriptada = await bcrypt.hash(respuesta + fraseEncriptacion, 12);
+  
+      const errores = validationResult(req);
+  
+      if (errores.isEmpty()) {
+  
+      // Query SQL para actualizar el usuario
+      const query = `
+      UPDATE usuarios
+      SET
+        nombre_usuario = $1,
+        id_sededepar = $2,
+        id_tipousuario = $3,
+        nombre = $4,
+        apellido = $5,
+        pregunta = $6,
+        respuesta = $7,
+        clave = $8,
+        foto_usuario = COALESCE($9, foto_usuario),
+        extension_telefonica = $10,
+        telefono = $11,
+        cedula = $12,
+        correo = $13
+      WHERE id_usuario = $14
+        AND NOT borrado
+        AND EXISTS (SELECT 1 FROM sedes_departamentos WHERE id_sede_departamento = $2)
+        AND EXISTS (SELECT 1 FROM tipos_usuarios WHERE id_tipo_usuario = $3)
+        AND NOT EXISTS (
+          SELECT 1 FROM usuarios
+          WHERE (nombre_usuario = $1 OR cedula = $12)
+          AND id_usuario <> $14
+        )
+      RETURNING *;
+    `;
+  
+      const values = [
+        nombre_usuario,
+        id_sededepar,
+        id_tipousuario,
+        camposMayus.nombre,
+        camposMayus.apellido,
+        camposMayus.pregunta,
+        respuestaEncriptada,
+        claveEncriptada,
+        fileUsuario,
+        extension_telefonica,
+        telefono,
+        cedula,
+        correo,
+        id_usuario
+  
+      ];
+  
+      const actualizarUsuario = await pool.query(query, values);
+      
+      if (actualizarUsuario.rowCount > 0) {
+  
+        auditar(operacion, id_usuarioAuditoria);
+  
+        if (fileUsuario && imagenAnterior) {
+          const pathImagenAnterior = join(CURRENT_DIR, '../cargas', imagenAnterior);
+  
+          fs.unlink(pathImagenAnterior, (err) => {
+            if (err) {
+              console.error('Error al eliminar la imagen anterior:', err);
+            } else {
+              console.log('Imagen anterior eliminada con éxito');
+            }
+          });
+        }
+  
+        return res.status(200).json({ mensaje: 'Usuario actualizado exitosamente' });
+      } else {
+        if (fileUsuario) {
+          const pathImagenNueva = join(CURRENT_DIR, '../cargas', fileUsuario);
+      
+          fs.unlink(pathImagenNueva, (err) => {
+            if (err) {
+              console.error('Error al eliminar la imagen nueva:', err);
+            } else {
+              console.log('Imagen nueva eliminada debido al error');
+            }
+          });
+        }
+  
+        return res.status(400).json({ error: 'Error al actualizar el usuario' });
+      }
+     } else {
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ error: 'Datos incorrectos' });
+      }
+     
+    } catch (error) {
+      console.error('Error al actualizar el usuario:', error);
+      res.status(500).json({ error: 'Error al actualizar el usuario' });
+    }
+  });
+    
