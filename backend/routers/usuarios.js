@@ -230,6 +230,6 @@ routerUsuarios.patch('/:id_usuario', validarIdUsuario, async (req, res) => {
         res.status(500).json({ error: 'Error al eliminar el usuario' });
     }
 });
-
+ 
 // Exportar el router para su uso en la aplicación principal
 module.exports = routerUsuarios;
