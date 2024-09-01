@@ -1,0 +1,20 @@
+.action-column{
+    justify-content: center;
+    align-items: center;
+    .icon {
+    padding: 10px;
+    }
+
+}
+
+
+.estado-inactivo {
+    background-color: #D42222;
+    color: white;
+      
+  }
+  
+  .estado-activo {
+    background-color: #4DAB2C;
+    color: white;
+  }
