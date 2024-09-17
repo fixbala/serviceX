@@ -7,7 +7,7 @@ import withReactContent from "sweetalert2-react-content";
 import axios from 'axios';
 import jwtDecode from 'jwt-decode';
 
-
+ 
 const MySwal = withReactContent(Swal);
 
 function GestionCobertura() {
