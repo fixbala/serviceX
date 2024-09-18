@@ -1,0 +1,137 @@
+.contenedor-login {
+  width: 100%;
+  display: flex;
+  border-bottom-right-radius: 15px;
+  border-top-right-radius: 15px;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+}
+
+.contenedor-form {
+  line-height: 10px;
+  width: 100%;
+  border-bottom-left-radius: 0px;
+  border-top-left-radius: 0px;
+  padding: 0 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+}
+
+h1 {
+  font-size: 40px;
+}
+
+h2 {
+  font-size: 17px;
+  font-weight: 300;
+}
+
+.input {
+  font-size: 18px;
+  justify-content: center;
+  font-family: "Poppins", sans-serif;
+  height: 45px;
+  border-radius: 20px;
+  width: 100%;
+  background-color: #e6e0e0;
+  border: 4px solid #2cab73;
+}
+
+.input:hover, .input:focus{
+  border: 4px solid #2cab74ee;
+  outline: none;
+}
+
+.form {
+  margin: 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.label {
+  margin: 5px 0;
+}
+
+.btn {
+  text-align: start;
+  font-size: 20px;
+  padding: 10px;
+  color: white;
+  width: 95%;
+  background-color: #032240;
+  border: none;
+  cursor: pointer;
+  font-family: "Poppins", sans-serif;
+  margin: 10px auto 0;
+  transition: all 0.5s ease;
+  border-radius: 10px;
+  -webkit-transition: all 0.5s ease;
+  -moz-transition: all 0.5s ease;
+  -ms-transition: all 0.5s ease;
+  -o-transition: all 0.5s ease;
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  -ms-border-radius: 10px;
+  -o-border-radius: 10px;
+}
+
+.btn:hover {
+  background-color: #032240ee;
+}
+
+.link {
+  color: #032240;
+  cursor: pointer;
+  font-family: "Poppins", sans-serif;
+  transition: all 0.5s ease;
+  -webkit-transition: all 0.5s ease;
+  -moz-transition: all 0.5s ease;
+  -ms-transition: all 0.5s ease;
+  -o-transition: all 0.5s ease;
+}
+.link:hover {
+  color: #032240ee;
+}
+
+.label-olvidar{
+  text-align: center;
+}
+
+/*RESPONSIVE*/
+
+@media screen and (max-width: 1200px) {
+
+  .contenedor-formulario {
+    padding: 0 25px;
+  }
+  
+}
+
+@media screen and (max-width: 768px) {
+
+  .link{
+    margin-bottom: 20px;
+  }
+}
+
+
+@media screen and (max-width: 480px) {
+  h1 {
+    font-size: 30px;
+  }
+
+  h2 {
+    font-size: 15px;
+    line-height: 1;
+  }
+
+  .contenedor-formulario{
+    text-align: center;
+  }
+}
