@@ -194,7 +194,7 @@ function GestionClientes() {
     console.log("selecciono la fila con" + id + "en gestion de clientes");
     setCamposEditados(filas.id);
     setShowModal(true);
-  };
+  }; 
 
   const handleEditClient = (editedClient) => {
     swalWithBootstrapButtons.fire({
